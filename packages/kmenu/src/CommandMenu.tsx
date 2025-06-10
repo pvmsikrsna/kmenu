@@ -68,35 +68,45 @@ const Wrapper: FC<MenuProps & { children: ReactNode }> = (props) => {
       )
   }, [open])
 
+
+  // This effect runs whenever the search query, setQuery, open state, or loadingState changes.
   useEffect(() => {
+    // Only run this effect if the menu is open at the current index.
     if (open !== props.index) return
 
+    // Reset the menu selection state when the menu opens or query changes.
     dispatch({ type: ActionType.RESET, custom: 0 })
 
+    // If there is no query or searching is prevented, reset the input and crumbs, and show all commands.
     if (!query || props.preventSearch) {
       if (!query) input.current!.value = ''
       setCrumbs(props.crumbs)
       return setResults(props.commands)
     }
 
+    // Otherwise, filter commands based on the search query.
     let index = 0
     const sorted: SortedCommands[] = []
 
+    // Iterate over each command category.
     props.commands.commands.forEach((row) => {
       const results: SortedCommands = {
         category: row.category,
         commands: [],
       }
 
+      // Check each command in the category for a match with the query.
       row.commands.forEach((command) => {
         const text =
           command.text.toLowerCase() + command.keywords?.join(' ').toLowerCase()
         if (text.includes(query.toLowerCase())) {
+          // If it matches, add it to the results with a global index.
           results.commands.push({ ...command, globalIndex: index })
           index++
         }
       })
 
+      // Also check subCommands, if any, for a match.
       row.subCommands?.forEach((command) => {
         const text =
           command.text.toLowerCase() + command.keywords?.join(' ').toLowerCase()
@@ -106,9 +116,11 @@ const Wrapper: FC<MenuProps & { children: ReactNode }> = (props) => {
         }
       })
 
+      // Only add categories that have matching commands.
       if (results.commands.length > 0) sorted.push(results)
     })
 
+    // Update the results state with the filtered commands and their count.
     return setResults({
       index: index,
       commands: sorted,
